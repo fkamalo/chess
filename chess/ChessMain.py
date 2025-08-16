@@ -1,5 +1,7 @@
 import pygame as p
 import ChessEngine
+import sys
+from ChessAi import getRandomMove, getAlphaBetaMove
 
 WIDTH = HEIGHT = 512
 DIMENSION = 8
@@ -24,6 +26,17 @@ def drawEndGameText(screen, text):
     p.display.flip()
 
 def main():
+    print("Choose a game mode:")
+    print("1: Human vs Random AI")
+    print("2: Human vs Alpha-Beta AI")
+    print("3: Alpha-Beta AI vs Alpha-Beta AI")
+    mode = input("Enter mode number (1-3): ").strip()
+    while mode not in {'1', '2', '3'}:
+        mode = input("Please enter 1, 2, or 3: ").strip()
+    mode = int(mode)
+
+    humanIsWhite = True if mode != 3 else None
+
     p.init()
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
@@ -39,29 +52,35 @@ def main():
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
+                p.quit()
+                sys.exit()
+
             elif e.type == p.MOUSEBUTTONDOWN:
-                location = p.mouse.get_pos()
-                col = location[0] // SQ_SIZE
-                row = location[1] // SQ_SIZE
-                if sqSelected == (row, col):
-                    sqSelected = ()
-                    playerClicks = []
-                else:
-                    sqSelected = (row, col)
-                    playerClicks.append((row, col))
-                if len(playerClicks) == 2:
-                    move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
-                    for i in range(len(validMoves)):
-                        if move == validMoves[i]:
-                            gs.makeMove(move)
-                            # Animate if you want, else remove animateMove line
-                            # animateMove(move, gs, screen, clock)
-                            moveMade = True
+                # Only allow human moves in mode 1 & 2 and only if it's human's turn
+                if humanIsWhite is not None:
+                    isHumanTurn = (gs.whiteToMove and humanIsWhite) or (not gs.whiteToMove and not humanIsWhite)
+                    if isHumanTurn:
+                        location = p.mouse.get_pos()
+                        col = location[0] // SQ_SIZE
+                        row = location[1] // SQ_SIZE
+                        if sqSelected == (row, col):
                             sqSelected = ()
                             playerClicks = []
-                            break
-                    if not moveMade:
-                        playerClicks = [sqSelected]
+                        else:
+                            sqSelected = (row, col)
+                            playerClicks.append((row, col))
+                        if len(playerClicks) == 2:
+                            move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
+                            for i in range(len(validMoves)):
+                                if move == validMoves[i]:
+                                    gs.makeMove(move)
+                                    moveMade = True
+                                    sqSelected = ()
+                                    playerClicks = []
+                                    break
+                            if not moveMade:
+                                playerClicks = [sqSelected]
+
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:
                     gs.undoMove()
@@ -77,9 +96,40 @@ def main():
             validMoves = gs.getValidMoves()
             moveMade = False
 
+        # AI turns depending on mode
+        if not gs.checkmate and not gs.stalemate:
+            if mode == 1:
+                # Human vs Random AI
+                if humanIsWhite and not gs.whiteToMove or (not humanIsWhite and gs.whiteToMove):
+                    aiValidMoves = gs.getValidMoves()
+                    if aiValidMoves:
+                        aiMove = getRandomMove(aiValidMoves)
+                        gs.makeMove(aiMove)
+                        moveMade = True
+                        sqSelected = ()
+                        playerClicks = []
+            elif mode == 2:
+                # Human vs Alpha-Beta AI
+                if humanIsWhite and not gs.whiteToMove or (not humanIsWhite and gs.whiteToMove):
+                    aiValidMoves = gs.getValidMoves()
+                    if aiValidMoves:
+                        aiMove = getAlphaBetaMove(gs, aiValidMoves)
+                        gs.makeMove(aiMove)
+                        moveMade = True
+                        sqSelected = ()
+                        playerClicks = []
+            elif mode == 3:
+                # Alpha-Beta AI vs Alpha-Beta AI
+                aiValidMoves = gs.getValidMoves()
+                if aiValidMoves:
+                    aiMove = getAlphaBetaMove(gs, aiValidMoves)
+                    gs.makeMove(aiMove)
+                    moveMade = True
+                    sqSelected = ()
+                    playerClicks = []
+
         drawGameState(gs, screen, validMoves, sqSelected)
 
-        # Draw endgame message if game ended
         if gs.checkmate:
             drawEndGameText(screen, "Checkmate! Game over.")
         elif gs.stalemate:
@@ -122,4 +172,3 @@ def highlightSquares(screen, gs, validMoves, sqSelected):
 
 if __name__ == "__main__":
     main()
-    p.quit()
