@@ -56,7 +56,7 @@ class GameState():
             self.board[move.endRow][move.endCol] = move.pieceMoved[0] + 'Q'
         # En passant
         if move.isEnPassantMove:
-            print("En passant triggered!")
+            # print("En passant triggered!")
             self
        
         if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2:
