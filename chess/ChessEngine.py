@@ -57,7 +57,7 @@ class GameState():
         # En passant
         if move.isEnPassantMove:
             # print("En passant triggered!")
-            self
+            self.board[move.startRow][move.endCol] = "--"
        
         if move.pieceMoved[1] == 'P' and abs(move.startRow - move.endRow) == 2:
             self.enPassantPossible = ((move.endRow + move.startRow) // 2, move.endCol)  # set en passant square

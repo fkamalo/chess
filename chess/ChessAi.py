@@ -37,7 +37,7 @@ class getSimpleAlphaBetaMove:
     def alpha_beta(self, gs, depth, alpha, beta, maximizing_player):
         self.nodes_evaluated += 1
         if time.time() - self.start_time > self.time_limit:
-            return 0
+            return self.evaluatePosition(gs)
 
         if gs.checkmate:
             return -1000 - depth if maximizing_player else 1000 + depth
@@ -82,7 +82,7 @@ class getSimpleAlphaBetaMove:
                 piece = gs.board[r][c]
                 if piece != "--":
                     value = self.piece_values.get(piece[1], 0)
-                    if piece == 'w':
+                    if piece[0] == 'w':
                         score += value
                     else:
                         score -= value
@@ -122,7 +122,7 @@ class getAlphaBetaMove:
     def alpha_beta(self, gs, depth, alpha, beta, maximizing_player):
         self.nodes_evaluated += 1
         if time.time() - self.start_time > self.time_limit:
-            return 0
+            return self.evaluatePosition(gs)
 
         if gs.checkmate:
             return -10000 - depth if maximizing_player else 10000 + depth
@@ -170,7 +170,7 @@ class getAlphaBetaMove:
                 piece = gs.board[r][c]
                 if piece != "--":
                     value = self.piece_values.get(piece[1], 0)
-                    if piece == 'w':
+                    if piece[0] == 'w':
                         white_material += value
                     else:
                         black_material += value
@@ -182,20 +182,20 @@ class getAlphaBetaMove:
             try:
                 enemy_king = gs.blackKingLocation if enemy_color == 'b' else gs.whiteKingLocation
                 my_king = gs.whiteKingLocation if gs.whiteToMove else gs.blackKingLocation
-                king_dist = abs(my_king[0] - enemy_king) + abs(my_king - enemy_king)
-                edge_dist = min(enemy_king, 7 - enemy_king, enemy_king, 7 - enemy_king)
+                king_dist = abs(my_king[0] - enemy_king[0]) + abs(my_king[1] - enemy_king[1])
+                edge_dist = min(enemy_king[0], 7 - enemy_king[0], enemy_king[1], 7 - enemy_king[1])
                 score += (10 - king_dist) * 30
                 score += (4 - edge_dist) * 50
                 for r in range(8):
                     for c in range(8):
                         piece = gs.board[r][c]
-                        if piece != "--" and piece == ('w' if gs.whiteToMove else 'b') and piece == 'Q':
-                            q_dist = abs(r - enemy_king) + abs(c - enemy_king)
+                        if piece != "--" and piece[0] == ('w' if gs.whiteToMove else 'b') and piece[1] == 'Q':
+                            q_dist = abs(r - enemy_king[0]) + abs(c - enemy_king[1])
                             score += (8 - q_dist) * 40
             except:
                 pass
         score += len(gs.getValidMoves()) * 5
-        return score
+        return score if gs.whiteToMove else -score
 
     def orderMoves(self, gs, moves):
         def move_score(move):
